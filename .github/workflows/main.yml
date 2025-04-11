@@ -1,45 +1,51 @@
-name: Run TW & SG Node Selector
+name: Node Selector Workflow
 
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
-  schedule:
-    - cron: '0 2 * * *' # 每天凌晨2点自动运行（UTC时间）
 
 jobs:
-  select-nodes:
+  build:
     runs-on: ubuntu-latest
-
     steps:
-    - name: 下载代码仓库
-      uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-    - name: 配置环境
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y curl
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14'
 
-    - name: 执行台湾和新加坡节点优选
-      run: bash Tw\ Sg\ Node\ Selector
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
 
-    - name: 提交结果
-      run: |
-        git config --global user.name github-actions
-        git config --global user.email github-actions@github.com
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y curl unzip
 
-        git add *.csv || true
-        git commit -m "自动更新节点结果 $(date '+%Y-%m-%d %H:%M:%S')" || echo "没有文件更新"
-        git push || echo "无法 push"
+      - name: Download and prepare necessary files
+        run: |
+          # Download necessary files for the script
+          curl -L -o cf https://raw.githubusercontent.com/yonggekkk/Cloudflare_vless_trojan/main/cf/amd64
+          chmod +x cf
+          curl -s -o locations.json https://raw.githubusercontent.com/yonggekkk/Cloudflare_vless_trojan/main/cf/locations.json
+          curl -s -o ips-v4.txt https://raw.githubusercontent.com/yonggekkk/Cloudflare_vless_trojan/main/cf/ips-v4.txt
+          curl -s -o ips-v6.txt https://raw.githubusercontent.com/yonggekkk/Cloudflare_vless_trojan/main/cf/ips-v6.txt
 
-    - name: 输出结果文件
-      run: |
-        echo -e "\n==== TW-4.csv ===="
-        cat TW-4.csv || echo "TW-4.csv 未生成"
+      - name: Run the script
+        run: |
+          bash ./cf.sh
 
-        echo -e "\n==== SG-4.csv ===="
-        cat SG-4.csv || echo "SG-4.csv 未生成"
+      - name: Archive results
+        run: |
+          mkdir -p archive
+          zip -r archive/results_$(date +%Y%m%d%H%M%S).zip ./4.csv ./6.csv ./TW-4.csv ./SG-4.csv ./TW-6.csv ./SG-6.csv
+          git add archive/results_$(date +%Y%m%d%H%M%S).zip
+          git commit -m "Add results for $(date +%Y%m%d%H%M%S)"
+          git push
 
-        echo -e "\n==== TW-6.csv ===="
-        cat TW-6.csv || echo "TW-6.csv 未生成"
-
-        echo -e "\n==== SG-6.csv ===="
-        cat SG-6.csv || echo "SG-6.csv 未生成"
