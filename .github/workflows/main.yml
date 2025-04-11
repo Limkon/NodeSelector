@@ -1,0 +1,45 @@
+name: Run TW & SG Node Selector
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 2 * * *' # 每天凌晨2点自动运行（UTC时间）
+
+jobs:
+  select-nodes:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: 下载代码仓库
+      uses: actions/checkout@v3
+
+    - name: 配置环境
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y curl
+
+    - name: 执行台湾和新加坡节点优选
+      run: bash Tw\ Sg\ Node\ Selector
+
+    - name: 提交结果
+      run: |
+        git config --global user.name github-actions
+        git config --global user.email github-actions@github.com
+
+        git add *.csv || true
+        git commit -m "自动更新节点结果 $(date '+%Y-%m-%d %H:%M:%S')" || echo "没有文件更新"
+        git push || echo "无法 push"
+
+    - name: 输出结果文件
+      run: |
+        echo -e "\n==== TW-4.csv ===="
+        cat TW-4.csv || echo "TW-4.csv 未生成"
+
+        echo -e "\n==== SG-4.csv ===="
+        cat SG-4.csv || echo "SG-4.csv 未生成"
+
+        echo -e "\n==== TW-6.csv ===="
+        cat TW-6.csv || echo "TW-6.csv 未生成"
+
+        echo -e "\n==== SG-6.csv ===="
+        cat SG-6.csv || echo "SG-6.csv 未生成"
