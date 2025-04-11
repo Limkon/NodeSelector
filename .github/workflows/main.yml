@@ -18,29 +18,15 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y curl unzip
 
-      - name: Download files if not present
+      - name: Ensure cf.sh is executable
         run: |
-          # Check if cf directory exists, skip download if it does
-          if [ ! -d "cf" ]; then
-            echo "Downloading cf..."
-            curl -L -o cf https://raw.githubusercontent.com/yonggekkk/Cloudflare_vless_trojan/main/cf/amd64
-            chmod +x cf
-          else
-            echo "cf already exists, skipping download."
-          fi
+          # 确保仓库中的 cf.sh 可执行
+          chmod +x cf/cf.sh
 
-          # Download other necessary files if they do not exist
-          [ ! -e locations.json ] && curl -s -o locations.json https://raw.githubusercontent.com/yonggekkk/Cloudflare_vless_trojan/main/cf/locations.json
-          [ ! -e ips-v4.txt ] && curl -s -o ips-v4.txt https://raw.githubusercontent.com/yonggekkk/Cloudflare_vless_trojan/main/cf/ips-v4.txt
-          [ ! -e ips-v6.txt ] && curl -s -o ips-v6.txt https://raw.githubusercontent.com/yonggekkk/Cloudflare_vless_trojan/main/cf/ips-v6.txt
-
-      - name: Run the script
+      - name: Run the cf.sh script
         run: |
-          # Ensure cf.sh is in the current directory
-          if [ ! -f "cf.sh" ]; then
-            echo "cf.sh script is missing, please verify your setup."
-            exit 1
-          fi
+          # 直接运行仓库中已有的 cf.sh 脚本
+          cd cf
           bash ./cf.sh
 
       - name: Archive results
