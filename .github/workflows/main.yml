@@ -1,46 +1,39 @@
-name: Node Selector Workflow
+name: Cloudflare Node Selection
 
 on:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
+  # 允许手动触发工作流
   workflow_dispatch:
+  # 定时运行（例如每天凌晨运行）
+  schedule:
+    - cron: '0 0 * * *'
 
 jobs:
-  selector:
+  run-cf-script:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
+      # 检出代码仓库
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: 3.x
-
-      - name: Install dependencies
+      # 设置环境
+      - name: Set up Environment
         run: |
           sudo apt-get update
-          sudo apt-get install -y curl zip
+          sudo apt-get install -y curl jq
+          export LANG=en_US.UTF-8
 
-      - name: Download necessary files for the script
+      # 运行 cf.sh 脚本
+      - name: Run cf.sh Script
         run: |
-          curl -L -o cf.sh --retry 2 --insecure https://raw.githubusercontent.com/yonggekkk/Cloudflare_vless_trojan/main/cf/cf.sh
-          chmod +x cf.sh
+          chmod +x cf/cf.sh
+          bash cf/cf.sh
 
-      - name: Run the selection script
-        run: |
-          bash ./cf.sh
-
-      - name: Archive selection results
-        run: |
-          zip -r selection_results.zip TW-4.csv SG-4.csv TW-6.csv SG-6.csv
-          
-      - name: Upload results to GitHub
-        uses: actions/upload-artifact@v2
+      # 上传结果文件
+      - name: Upload Results
+        uses: actions/upload-artifact@v4
         with:
-          name: selection-results
-          path: selection_results.zip
+          name: cf-results
+          path: |
+            *.csv
+          retention-days: 7
