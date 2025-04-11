@@ -13,32 +13,34 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v2
-        with:
-          node-version: '14'
-
-      - name: Set up Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: '3.x'
-
-      - name: Install dependencies
+      - name: Set up dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y curl unzip
 
-      - name: Download and prepare necessary files
+      - name: Download files if not present
         run: |
-          # Download necessary files for the script
-          curl -L -o cf https://raw.githubusercontent.com/yonggekkk/Cloudflare_vless_trojan/main/cf/amd64
-          chmod +x cf
-          curl -s -o locations.json https://raw.githubusercontent.com/yonggekkk/Cloudflare_vless_trojan/main/cf/locations.json
-          curl -s -o ips-v4.txt https://raw.githubusercontent.com/yonggekkk/Cloudflare_vless_trojan/main/cf/ips-v4.txt
-          curl -s -o ips-v6.txt https://raw.githubusercontent.com/yonggekkk/Cloudflare_vless_trojan/main/cf/ips-v6.txt
+          # Check if cf directory exists, skip download if it does
+          if [ ! -d "cf" ]; then
+            echo "Downloading cf..."
+            curl -L -o cf https://raw.githubusercontent.com/yonggekkk/Cloudflare_vless_trojan/main/cf/amd64
+            chmod +x cf
+          else
+            echo "cf already exists, skipping download."
+          fi
+
+          # Download other necessary files if they do not exist
+          [ ! -e locations.json ] && curl -s -o locations.json https://raw.githubusercontent.com/yonggekkk/Cloudflare_vless_trojan/main/cf/locations.json
+          [ ! -e ips-v4.txt ] && curl -s -o ips-v4.txt https://raw.githubusercontent.com/yonggekkk/Cloudflare_vless_trojan/main/cf/ips-v4.txt
+          [ ! -e ips-v6.txt ] && curl -s -o ips-v6.txt https://raw.githubusercontent.com/yonggekkk/Cloudflare_vless_trojan/main/cf/ips-v6.txt
 
       - name: Run the script
         run: |
+          # Ensure cf.sh is in the current directory
+          if [ ! -f "cf.sh" ]; then
+            echo "cf.sh script is missing, please verify your setup."
+            exit 1
+          fi
           bash ./cf.sh
 
       - name: Archive results
@@ -48,4 +50,3 @@ jobs:
           git add archive/results_$(date +%Y%m%d%H%M%S).zip
           git commit -m "Add results for $(date +%Y%m%d%H%M%S)"
           git push
-
