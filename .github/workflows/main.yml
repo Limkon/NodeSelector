@@ -4,35 +4,42 @@ on:
   push:
     branches:
       - main
-  workflow_dispatch:
+  pull_request:
+    branches:
+      - main
 
 jobs:
-  build:
+  selector:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v2
 
-      - name: Set up dependencies
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.x
+
+      - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y curl unzip
+          sudo apt-get install -y curl zip
 
-      - name: Ensure cf.sh is executable
+      - name: Download necessary files for the script
         run: |
-          # 确保仓库中的 cf.sh 可执行
-          chmod +x cf/cf.sh
+          curl -L -o cf.sh --retry 2 --insecure https://raw.githubusercontent.com/yonggekkk/Cloudflare_vless_trojan/main/cf/cf.sh
+          chmod +x cf.sh
 
-      - name: Run the cf.sh script
+      - name: Run the selection script
         run: |
-          # 直接运行仓库中已有的 cf.sh 脚本
-          cd cf
           bash ./cf.sh
 
-      - name: Archive results
+      - name: Archive selection results
         run: |
-          mkdir -p archive
-          zip -r archive/results_$(date +%Y%m%d%H%M%S).zip ./4.csv ./6.csv ./TW-4.csv ./SG-4.csv ./TW-6.csv ./SG-6.csv
-          git add archive/results_$(date +%Y%m%d%H%M%S).zip
-          git commit -m "Add results for $(date +%Y%m%d%H%M%S)"
-          git push
+          zip -r selection_results.zip TW-4.csv SG-4.csv TW-6.csv SG-6.csv
+          
+      - name: Upload results to GitHub
+        uses: actions/upload-artifact@v2
+        with:
+          name: selection-results
+          path: selection_results.zip
