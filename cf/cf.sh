@@ -16,12 +16,12 @@ esac
 # 优选函数：筛选台湾、新加坡节点
 result(){
   echo "\n筛选台湾和新加坡的优选节点（各取前3）..."
-
+  
   # 台湾：TPE（台北）、KHH（高雄）
   awk -F ',' '$2 ~ /TPE|KHH/' $ip.csv | sort -t ',' -k5,5n | head -n 3 > TW-$ip.csv
   echo "\n台湾优选节点："
   cat TW-$ip.csv
-
+  
   # 新加坡：SIN
   awk -F ',' '$2 ~ /SIN/' $ip.csv | sort -t ',' -k5,5n | head -n 3 > SG-$ip.csv
   echo "\n新加坡优选节点："
@@ -53,9 +53,21 @@ ip=6
 result
 
 # 展示结果
-[ -e TW-4.csv ] && echo "\n台湾 IPV4 优选：" && cat TW-4.csv
-[ -e SG-4.csv ] && echo "\n新加坡 IPV4 优选：" && cat SG-4.csv
-[ -e TW-6.csv ] && echo "\n台湾 IPV6 优选：" && cat TW-6.csv
-[ -e SG-6.csv ] && echo "\n新加坡 IPV6 优选：" && cat SG-6.csv
+if [ -e TW-4.csv ]; then
+  echo "\n台湾 IPV4 优选："
+  cat TW-4.csv
+fi
+if [ -e SG-4.csv ]; then
+  echo "\n新加坡 IPV4 优选："
+  cat SG-4.csv
+fi
+if [ -e TW-6.csv ]; then
+  echo "\n台湾 IPV6 优选："
+  cat TW-6.csv
+fi
+if [ -e SG-6.csv ]; then
+  echo "\n新加坡 IPV6 优选："
+  cat SG-6.csv
+fi
 
 [ ! -e 4.csv ] && [ ! -e 6.csv ] && echo "\n运行出错，请检查网络依赖环境"
